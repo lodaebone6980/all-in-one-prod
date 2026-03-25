@@ -1,113 +1,108 @@
 import { motion } from 'framer-motion';
 import { useAppStore } from '../stores/use-app-store';
-import { TAB_LIST } from '../utils/tab-config';
+import { useUiStore } from '../stores/use-ui-store';
+import { useProjectStore } from '../stores/use-project-store';
+import { PIPELINE_TABS, POST_PROD_TABS, TOOLBOX_TABS, getActiveColorClasses, type NavTab } from '../utils/tab-config';
 import type { TabId } from '../types';
 
 export function Sidebar() {
-  const { activeTab, setActiveTab, sidebarCollapsed, setSidebarCollapsed, setSettingsOpen } = useAppStore();
+  const { activeTab, setActiveTab } = useAppStore();
+  const { postProdOpen, setPostProdOpen, toolboxOpen, setToolboxOpen } = useUiStore();
+  const addProject = useProjectStore((s) => s.addProject);
+
+  const handleNewProject = async () => {
+    const name = `프로젝트 ${new Date().toLocaleDateString('ko-KR')}`;
+    await addProject({ name, description: '', data: {} });
+    setActiveTab('project');
+  };
 
   return (
-    <motion.aside
-      animate={{ width: sidebarCollapsed ? 64 : 220 }}
-      transition={{ duration: 0.2, ease: 'easeInOut' }}
-      className="h-full bg-gray-900 border-r border-gray-800 flex flex-col shrink-0 overflow-hidden"
-    >
-      {/* Header */}
-      <div className="p-3 flex items-center gap-2 border-b border-gray-800 min-h-[52px]">
-        {!sidebarCollapsed && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex-1 min-w-0"
-          >
-            <h1 className="text-sm font-bold text-white truncate">All In One</h1>
-            <p className="text-[10px] text-gray-500">Production v5.0</p>
-          </motion.div>
-        )}
+    <aside className="fixed top-16 left-0 bottom-0 w-[15.5rem] bg-gray-950 border-r border-gray-800 z-30 flex flex-col py-3 px-3 gap-1 overflow-y-auto">
+      {/* New Project Button */}
+      <button
+        onClick={handleNewProject}
+        className="flex items-center justify-center gap-2 px-4 py-2.5 mb-1 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 transition-all shadow-lg shadow-blue-500/10"
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+        새 프로젝트
+      </button>
+
+      {/* Pipeline Tabs */}
+      {PIPELINE_TABS.map((tab) => (
+        <TabButton key={tab.id} tab={tab} active={activeTab === tab.id} onClick={() => setActiveTab(tab.id)} size="main" />
+      ))}
+
+      {/* Post-Production Accordion */}
+      <div className="mt-3">
         <button
-          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="p-1.5 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors shrink-0"
-          title={sidebarCollapsed ? '사이드바 펼치기' : '사이드바 접기'}
+          onClick={() => setPostProdOpen(!postProdOpen)}
+          className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-gray-400 hover:text-gray-200 transition-colors"
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path
-              d={sidebarCollapsed ? 'M6 3l5 5-5 5' : 'M10 3L5 8l5 5'}
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <span className="flex items-center gap-2">🎞️ 후반작업</span>
+          <motion.span animate={{ rotate: postProdOpen ? 180 : 0 }} transition={{ duration: 0.2 }} className="text-xs">
+            ▼
+          </motion.span>
         </button>
+        <motion.div
+          initial={false}
+          animate={{ height: postProdOpen ? 'auto' : 0, opacity: postProdOpen ? 1 : 0 }}
+          transition={{ duration: 0.2 }}
+          className="overflow-hidden pl-3"
+        >
+          <div className="space-y-0.5">
+            {POST_PROD_TABS.map((tab) => (
+              <TabButton key={tab.id} tab={tab} active={activeTab === tab.id} onClick={() => setActiveTab(tab.id)} size="sub" />
+            ))}
+          </div>
+        </motion.div>
       </div>
 
-      {/* Tabs */}
-      <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
-        {TAB_LIST.map((tab) => (
-          <TabButton
-            key={tab.id}
-            id={tab.id}
-            icon={tab.icon}
-            label={tab.label}
-            active={activeTab === tab.id}
-            collapsed={sidebarCollapsed}
-            onClick={() => setActiveTab(tab.id)}
-          />
-        ))}
-      </nav>
-
-      {/* Settings button */}
-      <div className="p-2 border-t border-gray-800">
+      {/* Toolbox Accordion */}
+      <div className="mt-4 pt-3 border-t-2 border-dashed border-gray-600/40">
         <button
-          onClick={() => setSettingsOpen(true)}
-          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors ${
-            sidebarCollapsed ? 'justify-center' : ''
-          }`}
+          onClick={() => setToolboxOpen(!toolboxOpen)}
+          className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-gray-400 hover:text-gray-200 transition-colors"
         >
-          <span className="text-base">⚙️</span>
-          {!sidebarCollapsed && <span className="text-xs">설정</span>}
+          <span className="flex items-center gap-2">🧰 도구모음</span>
+          <motion.span animate={{ rotate: toolboxOpen ? 180 : 0 }} transition={{ duration: 0.2 }} className="text-xs">
+            ▼
+          </motion.span>
         </button>
+        <motion.div
+          initial={false}
+          animate={{ height: toolboxOpen ? 'auto' : 0, opacity: toolboxOpen ? 1 : 0 }}
+          transition={{ duration: 0.2 }}
+          className="overflow-hidden pl-3"
+        >
+          <div className="space-y-0.5">
+            {TOOLBOX_TABS.map((tab) => (
+              <TabButton key={tab.id} tab={tab} active={activeTab === tab.id} onClick={() => setActiveTab(tab.id)} size="sub" />
+            ))}
+          </div>
+        </motion.div>
       </div>
-    </motion.aside>
+
+      {/* Bottom: auto-save */}
+      <div className="mt-auto pt-4 px-2">
+        <div className="flex items-center gap-2 text-[10px] text-gray-600">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+          자동 저장됨 {new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+        </div>
+      </div>
+    </aside>
   );
 }
 
-function TabButton({
-  id,
-  icon,
-  label,
-  active,
-  collapsed,
-  onClick,
-}: {
-  id: TabId;
-  icon: string;
-  label: string;
-  active: boolean;
-  collapsed: boolean;
-  onClick: () => void;
-}) {
+function TabButton({ tab, active, onClick, size }: { tab: NavTab; active: boolean; onClick: () => void; size: 'main' | 'sub' }) {
+  const baseClass = size === 'main'
+    ? 'flex items-center gap-3 w-full px-4 py-3.5 rounded-lg text-base font-semibold transition-all'
+    : 'flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg text-sm font-semibold transition-all';
+
   return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150 group relative ${
-        active
-          ? 'bg-indigo-600/20 text-indigo-300 shadow-sm'
-          : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/60'
-      } ${collapsed ? 'justify-center px-2' : ''}`}
-      title={collapsed ? label : undefined}
-    >
-      {active && (
-        <motion.div
-          layoutId="activeTab"
-          className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-indigo-500 rounded-r-full"
-          transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-        />
-      )}
-      <span className="text-base shrink-0">{icon}</span>
-      {!collapsed && (
-        <span className="text-xs font-medium truncate">{label}</span>
-      )}
+    <button onClick={onClick} className={`${baseClass} ${getActiveColorClasses(tab.activeColor, active)} ${!active ? 'border border-transparent' : ''}`}>
+      <span>{tab.icon}</span>
+      <span className="truncate">{tab.label}</span>
+      {tab.badge && <span className="text-xs">{tab.badge}</span>}
     </button>
   );
 }

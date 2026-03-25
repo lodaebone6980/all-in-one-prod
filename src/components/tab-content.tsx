@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../stores/use-app-store';
+import { PipelineBreadcrumb } from './pipeline-breadcrumb';
 import type { TabId } from '../types';
 
 // Lazy-loaded feature modules
@@ -54,21 +55,23 @@ export function TabContent() {
   const Component = TAB_COMPONENTS[activeTab];
 
   return (
-    <main className="flex-1 overflow-hidden flex flex-col">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -6 }}
-          transition={{ duration: 0.15 }}
-          className="flex-1 overflow-hidden flex flex-col"
-        >
-          <Suspense fallback={<TabLoading />}>
-            <Component />
-          </Suspense>
-        </motion.div>
-      </AnimatePresence>
+    <main className="ml-[15.5rem] mt-16 flex-1 pb-12 px-8 overflow-y-auto h-[calc(100vh-4rem)]">
+      <div className="pt-6">
+        <PipelineBreadcrumb />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.15 }}
+          >
+            <Suspense fallback={<TabLoading />}>
+              <Component />
+            </Suspense>
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </main>
   );
 }

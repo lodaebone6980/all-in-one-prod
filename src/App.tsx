@@ -1,14 +1,28 @@
 import { Toaster } from 'sonner';
+import { HeaderBar } from './components/header-bar';
 import { Sidebar } from './components/sidebar';
 import { TabContent } from './components/tab-content';
 import { SettingsPanel } from './components/settings-panel';
+import { AuthModal } from './components/auth-modal';
+import { ProfileModal } from './components/profile-modal';
+import { FeedbackModal } from './components/feedback-modal';
+import { useUiStore } from './stores/use-ui-store';
 
 export default function App() {
+  const { showApiSettings } = useUiStore();
+
   return (
-    <div className="h-screen w-screen flex bg-gray-950 text-gray-100 overflow-hidden">
+    <div className="h-screen w-screen bg-gray-900 text-white antialiased overflow-hidden">
+      <HeaderBar />
       <Sidebar />
       <TabContent />
-      <SettingsPanel />
+
+      {/* Modals */}
+      {showApiSettings && <SettingsPanel />}
+      <AuthModal />
+      <ProfileModal />
+      <FeedbackModal />
+
       <Toaster
         position="bottom-right"
         theme="dark"
