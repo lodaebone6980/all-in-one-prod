@@ -2,44 +2,43 @@
 
 @theme {
   --font-pretendard: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
-  --color-gray-925: #111118;
-  --color-gray-850: #1a1a24;
 }
 
-/* Scrollbar */
+/* Scrollbar - matching original (10px, gray-800 track, gray-600 thumb) */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #1f2937;
 }
 ::-webkit-scrollbar-thumb {
-  background: #374151;
-  border-radius: 3px;
+  background: #4b5563;
+  border-radius: 2px;
+  min-height: 40px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #4b5563;
+  background: #6b7280;
+}
+::-webkit-scrollbar-thumb:active {
+  background: #9ca3af;
 }
 
 /* Selection */
 ::selection {
-  background: rgba(99, 102, 241, 0.3);
+  background: rgba(59, 130, 246, 0.3);
 }
 
 /* Base */
 body {
   font-family: var(--font-pretendard);
-  overflow: hidden;
 }
 
-/* Tab transition */
-.tab-enter {
-  opacity: 0;
-  transform: translateY(8px);
+/* Fade-in animation matching original */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }
-.tab-enter-active {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
 }

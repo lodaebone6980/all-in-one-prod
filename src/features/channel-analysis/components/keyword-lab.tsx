@@ -206,7 +206,7 @@ export default function KeywordLab() {
         <input type="text" value={keyword} onChange={(e) => setKeyword(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && analyze()}
           placeholder="분석할 YouTube 키워드 (예: AI 영상 편집, 여행 브이로그)"
-          className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500" />
+          className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-base text-white placeholder-gray-500 focus:outline-none focus:border-blue-500" />
         <div className="flex border border-gray-700 rounded-lg overflow-hidden">
           {LANGUAGES.map((l) => (
             <button key={l.id} onClick={() => setLang(l.id)}
@@ -216,7 +216,7 @@ export default function KeywordLab() {
           ))}
         </div>
         <button onClick={analyze} disabled={loading}
-          className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-lg disabled:opacity-50 transition-all">
+          className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-base font-bold rounded-lg disabled:opacity-50 transition-all">
           {loading ? loadingStage || '분석 중...' : '분석'}
         </button>
       </div>
@@ -390,9 +390,9 @@ export default function KeywordLab() {
 
 function MetricCard({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
-      <p className="text-[10px] text-gray-500">{label}</p>
-      <p className={`text-xl font-bold ${color}`}>{value}</p>
+    <div className="bg-gray-900 border border-gray-600 rounded-xl p-4">
+      <p className="text-sm text-gray-400 mb-1">{label}</p>
+      <p className={`text-2xl font-bold ${color}`}>{value}</p>
     </div>
   );
 }

@@ -17,11 +17,11 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="fixed top-16 left-0 bottom-0 w-[15.5rem] bg-gray-950 border-r border-gray-800 z-30 flex flex-col py-3 px-3 gap-1 overflow-y-auto">
+    <aside className="fixed top-16 left-0 bottom-0 w-44 shrink-0 border-r border-gray-700 py-3 overflow-y-auto bg-gray-900/80 z-30 flex flex-col">
       {/* New Project Button */}
       <button
         onClick={handleNewProject}
-        className="flex items-center justify-center gap-2 px-4 py-2.5 mb-1 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 transition-all shadow-lg shadow-blue-500/10"
+        className="flex items-center justify-center gap-2 mx-2 mb-2 px-3 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 transition-all shadow-lg shadow-blue-500/10"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
         새 프로젝트
@@ -95,11 +95,15 @@ export function Sidebar() {
 
 function TabButton({ tab, active, onClick, size }: { tab: NavTab; active: boolean; onClick: () => void; size: 'main' | 'sub' }) {
   const baseClass = size === 'main'
-    ? 'flex items-center gap-3 w-full px-4 py-3.5 rounded-lg text-base font-semibold transition-all'
-    : 'flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg text-sm font-semibold transition-all';
+    ? 'text-left w-full px-3 py-2 text-sm font-bold border-r-2 transition-all flex items-center gap-2'
+    : 'text-left w-full px-3 py-2 text-sm font-bold border-r-2 transition-all flex items-center gap-2 pl-5';
+
+  const activeClass = active
+    ? `border-r-blue-500 bg-gray-800/60 text-white`
+    : 'border-r-transparent text-gray-400 hover:text-gray-200 hover:bg-gray-800/40';
 
   return (
-    <button onClick={onClick} className={`${baseClass} ${getActiveColorClasses(tab.activeColor, active)} ${!active ? 'border border-transparent' : ''}`}>
+    <button onClick={onClick} className={`${baseClass} ${activeClass}`}>
       <span>{tab.icon}</span>
       <span className="truncate">{tab.label}</span>
       {tab.badge && <span className="text-xs">{tab.badge}</span>}

@@ -12,7 +12,7 @@ export default function App() {
   const { showApiSettings } = useUiStore();
 
   return (
-    <div className="h-screen w-screen bg-gray-900 text-white antialiased overflow-hidden">
+    <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-blue-500/30 relative">
       <HeaderBar />
       <Sidebar />
       <TabContent />

@@ -40,14 +40,14 @@ export default function ChannelAnalysisTab() {
   const quotaPercent = (quotaUsed / QUOTA_LIMIT) * 100;
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto p-6 bg-gray-800 rounded-xl shadow-2xl border border-gray-700 relative">
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
             📡 채널/영상 분석
           </h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-base text-gray-400 mt-1">
             키워드 리서치와 채널 벤치마킹으로 콘텐츠 전략을 수립하세요.
           </p>
         </div>
@@ -89,23 +89,16 @@ export default function ChannelAnalysisTab() {
       </div>
 
       {/* Sub-tabs */}
-      <div className="flex items-center gap-1 mb-6 bg-gray-800/50 border border-gray-700 rounded-lg p-1 w-fit">
+      <div className="flex items-center gap-1 mb-8 border-b border-gray-700">
         {SUB_TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setSubTab(tab.id)}
-            className={`relative px-4 py-2 rounded-md text-xs font-medium transition-colors ${
-              subTab === tab.id ? 'text-white' : 'text-gray-400 hover:text-gray-200'
+            className={`relative px-4 py-3 text-sm font-bold transition-colors border-b-2 ${
+              subTab === tab.id ? 'text-blue-400 border-blue-500' : 'text-gray-400 hover:text-gray-200 border-transparent'
             }`}
           >
-            {subTab === tab.id && (
-              <motion.div
-                layoutId="channelSubTab"
-                className="absolute inset-0 bg-blue-600/30 rounded-md"
-                transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-              />
-            )}
-            <span className="relative flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5">
               <span>{tab.icon}</span>{tab.label}
             </span>
           </button>

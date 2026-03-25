@@ -51,8 +51,7 @@ export function TabContent() {
   const Component = TAB_COMPONENTS[activeTab];
 
   return (
-    <main className="ml-[15.5rem] mt-16 flex-1 pb-12 px-8 overflow-y-auto h-[calc(100vh-4rem)]">
-      <div className="pt-6">
+    <main className="ml-44 mt-16 flex-1 p-6 overflow-y-auto h-[calc(100vh-4rem)]">
         <PipelineBreadcrumb />
         <AnimatePresence mode="wait">
           <motion.div
@@ -67,7 +66,6 @@ export function TabContent() {
             </Suspense>
           </motion.div>
         </AnimatePresence>
-      </div>
     </main>
   );
 }
