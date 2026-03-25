@@ -43,8 +43,8 @@ export default function ThumbnailStudioTab() {
     <div className="flex-1 overflow-y-auto p-6">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto">
         <div className="mb-6">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2"><span>🖼️</span> 썸네일 스튜디오</h2>
-          <p className="text-sm text-gray-400 mt-1">AI로 유튜브 썸네일을 생성하고 편집하세요</p>
+          <h1 className="text-2xl font-bold text-white">썸네일 스튜디오</h1>
+          <p className="text-gray-400 text-base">프로젝트 없이 바로 바이럴 썸네일을 생성합니다</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">

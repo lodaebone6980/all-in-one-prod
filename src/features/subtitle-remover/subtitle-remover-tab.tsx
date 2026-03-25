@@ -31,8 +31,8 @@ export default function SubtitleRemoverTab() {
     <div className="flex-1 overflow-y-auto p-6">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto">
         <div className="mb-6">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2"><span>🧹</span> 자막/워터마크 제거</h2>
-          <p className="text-sm text-gray-400 mt-1">AI로 영상의 자막과 워터마크를 깔끔하게 제거하세요 (Kie AI)</p>
+          <h1 className="text-2xl font-bold text-white">자막/워터마크 제거</h1>
+          <p className="text-sm text-gray-400 mt-1">영상을 업로드하면 AI가 자동으로 자막을 감지하고 제거합니다 — 무료</p>
         </div>
 
         {/* Mode selector */}

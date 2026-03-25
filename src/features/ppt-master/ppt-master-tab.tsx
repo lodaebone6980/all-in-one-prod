@@ -57,8 +57,8 @@ export default function PptMasterTab() {
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto">
         <div className="mb-6 flex items-start justify-between">
           <div>
-            <h2 className="text-xl font-bold text-white flex items-center gap-2"><span>📊</span> PPT 마스터</h2>
-            <p className="text-sm text-gray-400 mt-1">AI로 프레젠테이션을 생성하세요. {SLIDE_STYLES.length}+ 디자인 스타일</p>
+            <h2 className="text-2xl font-bold text-white">PPT 마스터</h2>
+            <p className="text-sm text-gray-400 mt-1">AI가 텍스트를 분석하여 프레젠테이션 슬라이드를 자동 생성합니다. {SLIDE_STYLES.length}+ 디자인 스타일</p>
           </div>
           {slides.length > 0 && (
             <button onClick={handleExport} className="px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors">

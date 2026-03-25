@@ -55,8 +55,8 @@ export default function UploadTab() {
     <div className="flex-1 overflow-y-auto p-6">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto">
         <div className="mb-6">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2"><span>📤</span> 업로드</h2>
-          <p className="text-sm text-gray-400 mt-1">여러 플랫폼에 한번에 업로드하세요</p>
+          <h1 className="text-2xl font-bold text-white">멀티 플랫폼 업로드</h1>
+          <p className="text-gray-400 text-base">YouTube · TikTok · Instagram · Threads · Naver Clip</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">

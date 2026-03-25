@@ -1,203 +1,124 @@
-import { useState, useMemo } from 'react';
+import { useState, Suspense, lazy } from 'react';
 import { motion } from 'framer-motion';
-import { toast } from 'sonner';
-import { SUPERTONIC_VOICES, TYPECAST_V30_EMOTIONS, typecastTTS, type Voice, type TtsEngine, type TypecastEmotion } from '../../services/tts-api';
-import { useAppStore } from '../../stores/use-app-store';
 
-type SubTab = 'tts' | 'bgm' | 'mixer';
+const MAIN_TABS = [
+  { id: 'tts', label: '나레이션', icon: '🎤' },
+  { id: 'music', label: '음악 생성', icon: '🎵' },
+  { id: 'sfx', label: '효과음', icon: '🔊' },
+  { id: 'reference', label: '뮤직 레퍼런스', icon: '🔍' },
+] as const;
+
+const TTS_SUB_TABS = [
+  { id: 'narration', label: '나레이션', icon: '🎙️' },
+  { id: 'waveform', label: '오디오 편집', icon: '✂️' },
+] as const;
+
+const TTS_ENGINES: Record<string, string> = { typecast: 'Typecast', microsoft: 'Microsoft Edge', supertonic: 'Supertonic 2' };
+
+// Lazy sub-panels (placeholder for now)
+const VoiceStudio = lazy(() => import('./voice-studio'));
+
+type MainTab = typeof MAIN_TABS[number]['id'];
+type TtsSubTab = typeof TTS_SUB_TABS[number]['id'];
+
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center h-64">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-2 border-gray-600 border-t-fuchsia-400 rounded-full animate-spin" />
+        <span className="text-gray-500 text-base">로딩 중...</span>
+      </div>
+    </div>
+  );
+}
 
 export default function SoundStudioTab() {
-  const apiKeys = useAppStore((s) => s.apiKeys);
-  const [subTab, setSubTab] = useState<SubTab>('tts');
-
-  const [engineFilter, setEngineFilter] = useState<TtsEngine | ''>('');
-  const [genderFilter, setGenderFilter] = useState('');
-  const [searchFilter, setSearchFilter] = useState('');
-  const [selectedVoice, setSelectedVoice] = useState<Voice | null>(null);
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
-
-  const [text, setText] = useState('');
-  const [emotion, setEmotion] = useState<TypecastEmotion>('normal');
-  const [speed, setSpeed] = useState(1.0);
-  const [generating, setGenerating] = useState(false);
-  const [audioResults, setAudioResults] = useState<{ url: string; text: string; voice: string }[]>([]);
-
-  // Use Supertonic as default voices (free, no API key needed)
-  const allVoices: Voice[] = useMemo(() => [...SUPERTONIC_VOICES], []);
-
-  const filteredVoices = useMemo(() => {
-    return allVoices.filter((v) => {
-      if (engineFilter && v.engine !== engineFilter) return false;
-      if (genderFilter && v.gender !== genderFilter) return false;
-      if (searchFilter) {
-        const q = searchFilter.toLowerCase();
-        return v.name.toLowerCase().includes(q) || v.description?.toLowerCase().includes(q) || v.language.includes(q);
-      }
-      return true;
-    });
-  }, [allVoices, engineFilter, genderFilter, searchFilter]);
-
-  const toggleFavorite = (voiceId: string) => {
-    setFavorites((prev) => { const next = new Set(prev); next.has(voiceId) ? next.delete(voiceId) : next.add(voiceId); return next; });
-  };
-
-  const handleSynthesize = async () => {
-    if (!selectedVoice) { toast.error('음성을 선택해주세요'); return; }
-    if (!text.trim()) { toast.error('텍스트를 입력해주세요'); return; }
-
-    setGenerating(true);
-    try {
-      if (selectedVoice.engine === 'typecast') {
-        const result = await typecastTTS(text, selectedVoice.id, apiKeys.typecast, { emotion, tempo: speed });
-        setAudioResults((prev) => [{ url: result.audioUrl, text: text.slice(0, 50), voice: selectedVoice.name }, ...prev]);
-        toast.success('음성 생성 완료!');
-      } else {
-        toast.info('Supertonic 2는 브라우저 기반 TTS입니다. Typecast API 키를 설정하면 488개 이상의 음성을 사용할 수 있습니다.');
-      }
-    } catch (err: any) {
-      toast.error(err.message || '음성 생성 실패');
-    } finally {
-      setGenerating(false);
-    }
-  };
+  const [mainTab, setMainTab] = useState<MainTab>('tts');
+  const [ttsSubTab, setTtsSubTab] = useState<TtsSubTab>('narration');
+  const [ttsEngine] = useState('typecast');
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto">
-        <div className="mb-6">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2"><span>🎵</span> 사운드스튜디오</h2>
-          <p className="text-sm text-gray-400 mt-1">AI 음성 합성 & 사운드 관리</p>
+    <div className="min-h-screen bg-gray-900 text-white">
+      <div className="max-w-7xl mx-auto px-4 pt-6 pb-2">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-fuchsia-500 to-fuchsia-700 rounded-lg flex items-center justify-center text-xl shadow-lg">🎵</div>
+            <div>
+              <h1 className="text-2xl font-bold text-white">사운드 스튜디오</h1>
+              <p className="text-gray-400 text-base">나레이션 음성 생성과 AI 음악 제작을 관리합니다</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600/30 hover:text-red-300 transition-all text-sm font-semibold">
+              ◼ 전체 정지
+            </button>
+            <span className="text-sm text-gray-500 bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-700">
+              TTS 엔진: <span className="text-fuchsia-400 font-semibold">{TTS_ENGINES[ttsEngine]}</span>
+            </span>
+          </div>
         </div>
 
-        {/* Sub tabs */}
-        <div className="flex items-center gap-1 mb-6 bg-gray-900 border border-gray-800 rounded-lg p-1 w-fit">
-          {[
-            { id: 'tts' as SubTab, label: '음성 합성', icon: '🎙️' },
-            { id: 'bgm' as SubTab, label: 'BGM 라이브러리', icon: '🎶' },
-            { id: 'mixer' as SubTab, label: '오디오 믹서', icon: '🎚️' },
-          ].map((tab) => (
-            <button key={tab.id} onClick={() => setSubTab(tab.id)}
-              className={`relative px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${subTab === tab.id ? 'text-white bg-fuchsia-600/30' : 'text-gray-400 hover:text-gray-200'}`}>
-              <span className="flex items-center gap-1.5"><span>{tab.icon}</span>{tab.label}</span>
+        {/* Main tabs */}
+        <div className="flex gap-2 mb-4">
+          {MAIN_TABS.map((tab) => (
+            <button key={tab.id} onClick={() => setMainTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all ${
+                mainTab === tab.id
+                  ? 'bg-fuchsia-600/20 text-fuchsia-300 border-fuchsia-500/50 shadow-md'
+                  : 'bg-gray-800 text-gray-400 border-gray-700 hover:text-gray-200 hover:border-gray-500'
+              }`}>
+              <span>{tab.icon}</span>{tab.label}
             </button>
           ))}
         </div>
 
-        {subTab === 'tts' && (
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
-            <div className="space-y-4">
-              {/* Filters */}
-              <div className="flex gap-2 flex-wrap">
-                <input type="text" value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)}
-                  placeholder="음성 검색..." className="flex-1 min-w-[150px] px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-fuchsia-500" />
-                <select value={genderFilter} onChange={(e) => setGenderFilter(e.target.value)}
-                  className="px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-xs text-gray-200">
-                  <option value="">전체 성별</option><option value="male">남성</option><option value="female">여성</option>
-                </select>
-              </div>
-
-              {/* Voice Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[500px] overflow-y-auto pr-1">
-                {filteredVoices.map((voice) => (
-                  <button key={voice.id} onClick={() => setSelectedVoice(voice)}
-                    className={`p-3 rounded-lg border text-left transition-all relative group ${
-                      selectedVoice?.id === voice.id ? 'border-fuchsia-500 bg-fuchsia-600/10' : 'border-gray-800 bg-gray-900 hover:border-gray-700'
-                    }`}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-white">{voice.name}</span>
-                      <button onClick={(e) => { e.stopPropagation(); toggleFavorite(voice.id); }}
-                        className={`text-xs ${favorites.has(voice.id) ? 'text-yellow-400' : 'text-gray-600 opacity-0 group-hover:opacity-100'} transition-all`}>
-                        {favorites.has(voice.id) ? '★' : '☆'}
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <span className="text-[10px] text-gray-500 bg-gray-800 px-1 py-0.5 rounded">{voice.engine}</span>
-                      <span className="text-[10px] text-gray-500">{voice.gender === 'male' ? '남' : '여'}</span>
-                    </div>
-                    {voice.description && <p className="text-[10px] text-gray-600 mt-1">{voice.description}</p>}
-                  </button>
-                ))}
-              </div>
-              <p className="text-[10px] text-gray-600">{filteredVoices.length}개 음성 | Typecast API 키 설정 시 488+ 음성 사용 가능</p>
-            </div>
-
-            {/* Right: TTS Controls */}
-            <div className="space-y-4">
-              {selectedVoice && (
-                <div className="bg-gray-900 border border-fuchsia-500/30 rounded-xl p-3">
-                  <p className="text-xs text-gray-400">선택된 음성</p>
-                  <p className="text-sm font-semibold text-white mt-0.5">{selectedVoice.name}</p>
-                  <p className="text-[10px] text-gray-500">{selectedVoice.engine} | {selectedVoice.gender}</p>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">텍스트</label>
-                <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="음성으로 변환할 텍스트를 입력하세요"
-                  rows={5} className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-fuchsia-500 resize-none" />
-                <p className="text-[10px] text-gray-600 mt-1 text-right">{text.length}자</p>
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-400 mb-1.5">감정</label>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {TYPECAST_V30_EMOTIONS.slice(0, 4).map((e) => {
-                    const icons: Record<string, string> = { normal: '😐', happy: '😊', sad: '😢', angry: '😠' };
-                    return (
-                      <button key={e} onClick={() => setEmotion(e)}
-                        className={`p-2 rounded-lg border text-center transition-all ${emotion === e ? 'border-fuchsia-500 bg-fuchsia-600/10' : 'border-gray-800 bg-gray-900 hover:border-gray-700'}`}>
-                        <span className="text-lg block">{icons[e] || '😐'}</span>
-                        <span className="text-[10px] text-gray-400">{e}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">속도: {speed.toFixed(1)}x</label>
-                <input type="range" min={0.5} max={2.0} step={0.1} value={speed} onChange={(e) => setSpeed(Number(e.target.value))} className="w-full accent-fuchsia-500" />
-              </div>
-
-              <button onClick={handleSynthesize} disabled={generating || !selectedVoice || !text.trim()}
-                className="w-full py-2.5 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 disabled:opacity-50 text-white text-sm rounded-lg transition-all font-medium">
-                {generating ? '생성 중...' : '🎙️ 음성 생성'}
+        {/* TTS sub-tabs */}
+        {mainTab === 'tts' && (
+          <div className="flex border-b border-gray-700 mb-4">
+            {TTS_SUB_TABS.map((tab) => (
+              <button key={tab.id} onClick={() => setTtsSubTab(tab.id)}
+                className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                  ttsSubTab === tab.id
+                    ? 'border-fuchsia-500 text-fuchsia-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-600'
+                }`}>
+                <span>{tab.icon}</span>{tab.label}
               </button>
+            ))}
+          </div>
+        )}
 
-              {audioResults.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs text-gray-400">생성된 음성</p>
-                  {audioResults.map((result, idx) => (
-                    <div key={idx} className="bg-gray-900 border border-gray-800 rounded-lg p-2.5 flex items-center gap-2">
-                      <button className="w-7 h-7 rounded-full bg-fuchsia-600/20 text-fuchsia-300 flex items-center justify-center text-xs shrink-0">▶</button>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-white truncate">{result.text}...</p>
-                        <p className="text-[10px] text-gray-500">{result.voice}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+        {/* Content */}
+        <Suspense fallback={<LoadingSpinner />}>
+          {mainTab === 'tts' && ttsSubTab === 'narration' && <VoiceStudio />}
+          {mainTab === 'tts' && ttsSubTab === 'waveform' && (
+            <EmptyPanel icon="✂️" title="오디오 편집" desc="나레이션 오디오를 편집하세요. 파형 기반 편집, 구간 자르기, 볼륨 조절을 지원합니다." />
+          )}
+          {mainTab === 'music' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <EmptyPanel icon="🎵" title="음악 생성" desc="AI가 영상에 맞는 BGM을 작곡합니다. Suno AI 기반 텍스트-투-뮤직." />
+              <EmptyPanel icon="📚" title="음악 라이브러리" desc="생성한 음악과 가져온 BGM을 관리합니다." />
             </div>
-          </div>
-        )}
+          )}
+          {mainTab === 'sfx' && (
+            <EmptyPanel icon="🔊" title="효과음" desc="AI 효과음 생성 및 효과음 라이브러리. 장면별 자동 매칭을 지원합니다." />
+          )}
+          {mainTab === 'reference' && (
+            <EmptyPanel icon="🔍" title="뮤직 레퍼런스" desc="YouTube나 파일에서 음악을 분석하고 비슷한 스타일의 BGM을 생성합니다." />
+          )}
+        </Suspense>
+      </div>
+    </div>
+  );
+}
 
-        {subTab === 'bgm' && (
-          <div className="text-center py-12">
-            <span className="text-4xl block mb-3">🎶</span>
-            <p className="text-sm text-gray-500">BGM 라이브러리 (Suno AI 연동)</p>
-            <p className="text-xs text-gray-600 mt-1">AI 작곡, SFX 생성, 음악 레퍼런스 분석</p>
-          </div>
-        )}
-
-        {subTab === 'mixer' && (
-          <div className="text-center py-12">
-            <span className="text-4xl block mb-3">🎚️</span>
-            <p className="text-sm text-gray-500">오디오 믹서</p>
-            <p className="text-xs text-gray-600 mt-1">나레이션 + BGM + SFX 볼륨/타이밍 조절</p>
-          </div>
-        )}
-      </motion.div>
+function EmptyPanel({ icon, title, desc }: { icon: string; title: string; desc: string }) {
+  return (
+    <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-8 text-center">
+      <span className="text-4xl block mb-3">{icon}</span>
+      <h3 className="text-base font-semibold text-white mb-2">{title}</h3>
+      <p className="text-sm text-gray-500 max-w-md mx-auto">{desc}</p>
     </div>
   );
 }

@@ -78,13 +78,14 @@ export default function EditRoomTab() {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           {/* Header */}
           <div className="flex items-start justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <span>✂️</span> 편집실
-              </h2>
-              <p className="text-sm text-gray-400 mt-1">
-                {store.scenes.length}씬 | {totalDuration}초 ({Math.floor(totalDuration / 60)}:{String(totalDuration % 60).padStart(2, '0')})
-              </p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-700 rounded-lg flex items-center justify-center text-xl shadow-lg">✂️</div>
+              <div>
+                <h1 className="text-2xl font-bold text-white">편집실</h1>
+                <p className="text-gray-400 text-base">
+                  — 장면별 자막, 효과, 오디오를 편집하세요 | {store.scenes.length}씬 | {Math.floor(totalDuration / 60)}:{String(totalDuration % 60).padStart(2, '0')}
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               {store.scenes.length === 0 && (
@@ -112,9 +113,9 @@ export default function EditRoomTab() {
           <div className="flex items-center gap-1 mb-4 bg-gray-900 border border-gray-800 rounded-lg p-1 w-fit">
             {[
               { id: 'timeline' as const, label: '타임라인', icon: '📐' },
-              { id: 'effects' as const, label: '이펙트', icon: '✨' },
-              { id: 'subtitles' as const, label: '자막', icon: '💬' },
-              { id: 'transition' as const, label: '트랜지션', icon: '🔄' },
+              { id: 'effects' as const, label: '이미지 효과', icon: '🎬' },
+              { id: 'subtitles' as const, label: '자막', icon: '✏️' },
+              { id: 'transition' as const, label: '밈/효과음', icon: '🎨' },
               { id: 'edit-point' as const, label: '편집포인트', icon: '📍' },
             ].map((tab) => (
               <button
