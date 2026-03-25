@@ -20,7 +20,7 @@ const SubtitleRemoverTab = lazy(() => import('../features/subtitle-remover/subti
 const CompanionBannerTab = lazy(() => import('../features/companion-banner/companion-banner-tab'));
 const ViewAlertTab = lazy(() => import('../features/view-alert/view-alert-tab'));
 
-const TAB_COMPONENTS: Record<TabId, React.LazyExoticComponent<() => JSX.Element>> = {
+const TAB_COMPONENTS: Record<TabId, React.LazyExoticComponent<() => React.ReactElement>> = {
   'project': ProjectTab,
   'channel-analysis': ChannelAnalysisTab,
   'script-writer': ScriptWriterTab,
