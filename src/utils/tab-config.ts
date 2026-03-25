@@ -27,7 +27,7 @@ export const POST_PROD_TABS: NavTab[] = [
 export const TOOLBOX_TABS: NavTab[] = [
   { id: 'thumbnail-studio', label: '썸네일 스튜디오', icon: '🖼️', activeColor: 'pink' },
   { id: 'character-twist', label: '캐릭터 비틀기', icon: '🌀', activeColor: 'orange' },
-  { id: 'source-import', label: '소스 임포트', icon: '📸', activeColor: 'emerald' },
+  { id: 'image-script-upload', label: '소스 임포트', icon: '📸', activeColor: 'emerald' },
   { id: 'ppt-master', label: 'PPT 마스터', icon: '📊', activeColor: 'sky' },
   { id: 'detail-page', label: '쇼핑콘텐츠', icon: '🛒', activeColor: 'teal' },
   { id: 'subtitle-remover', label: '자막/워터마크 제거', icon: '🧹', activeColor: 'cyan' },

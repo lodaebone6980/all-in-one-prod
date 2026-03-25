@@ -8,12 +8,10 @@ export type TabId =
   | 'thumbnail-studio'
   | 'upload'
   | 'character-twist'
-  | 'source-import'
+  | 'image-script-upload'
   | 'ppt-master'
   | 'detail-page'
-  | 'subtitle-remover'
-  | 'companion-banner'
-  | 'view-alert';
+  | 'subtitle-remover';
 
 export interface TabConfig {
   id: TabId;

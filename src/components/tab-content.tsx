@@ -4,7 +4,7 @@ import { useAppStore } from '../stores/use-app-store';
 import { PipelineBreadcrumb } from './pipeline-breadcrumb';
 import type { TabId } from '../types';
 
-// Lazy-loaded feature modules
+// Lazy-loaded feature modules (13 tabs matching original)
 const ProjectTab = lazy(() => import('../features/project/project-tab'));
 const ChannelAnalysisTab = lazy(() => import('../features/channel-analysis/channel-analysis-tab'));
 const ScriptWriterTab = lazy(() => import('../features/script-writer/script-writer-tab'));
@@ -18,8 +18,6 @@ const SourceImportTab = lazy(() => import('../features/source-import/source-impo
 const PptMasterTab = lazy(() => import('../features/ppt-master/ppt-master-tab'));
 const DetailPageTab = lazy(() => import('../features/detail-page/detail-page-tab'));
 const SubtitleRemoverTab = lazy(() => import('../features/subtitle-remover/subtitle-remover-tab'));
-const CompanionBannerTab = lazy(() => import('../features/companion-banner/companion-banner-tab'));
-const ViewAlertTab = lazy(() => import('../features/view-alert/view-alert-tab'));
 
 const TAB_COMPONENTS: Record<TabId, React.LazyExoticComponent<() => React.ReactElement>> = {
   'project': ProjectTab,
@@ -31,19 +29,17 @@ const TAB_COMPONENTS: Record<TabId, React.LazyExoticComponent<() => React.ReactE
   'thumbnail-studio': ThumbnailStudioTab,
   'upload': UploadTab,
   'character-twist': CharacterTwistTab,
-  'source-import': SourceImportTab,
+  'image-script-upload': SourceImportTab,
   'ppt-master': PptMasterTab,
   'detail-page': DetailPageTab,
   'subtitle-remover': SubtitleRemoverTab,
-  'companion-banner': CompanionBannerTab,
-  'view-alert': ViewAlertTab,
 };
 
 function TabLoading() {
   return (
-    <div className="flex-1 flex items-center justify-center">
+    <div className="flex-1 flex items-center justify-center min-h-[300px]">
       <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
         <span className="text-xs text-gray-500">로딩 중...</span>
       </div>
     </div>

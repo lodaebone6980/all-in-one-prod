@@ -45,7 +45,7 @@ export const useScriptStore = create<ScriptState>((set) => ({
 
   topic: '',
   setTopic: (t) => set({ topic: t }),
-  model: 'claude-sonnet',
+  model: 'gemini-3.1-pro',
   setModel: (m) => set({ model: m }),
   format: 'long',
   setFormat: (f) => set({ format: f }),

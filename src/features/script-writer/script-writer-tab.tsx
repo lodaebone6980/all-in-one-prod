@@ -1,45 +1,52 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useAppStore } from '../../stores/use-app-store';
 import { useScriptStore } from '../../stores/use-script-store';
-import { AI_MODELS, generateScript, type AiModel, type ScriptFormat, type ScriptStructure, type ScriptResult } from '../../services/ai-api';
+import { AI_MODELS, SCRIPT_FORMATS, generateScript, type AiModel, type ScriptFormat, type ScriptResult } from '../../services/ai-api';
 
-const FORMATS: { id: ScriptFormat; label: string; icon: string; desc: string }[] = [
-  { id: 'long', label: '장편', icon: '📖', desc: '10-20분 영상' },
-  { id: 'short', label: '숏폼', icon: '📱', desc: '1-3분 영상' },
-  { id: 'nano', label: '나노/도파민', icon: '⚡', desc: '15-60초' },
-];
-
-const STRUCTURES: { id: ScriptStructure; label: string; icon: string }[] = [
-  { id: 'narrative', label: '기승전결 서사', icon: '📚' },
-  { id: 'listicle', label: '리스트/랭킹', icon: '📋' },
-  { id: 'tutorial', label: '튜토리얼', icon: '🎓' },
-  { id: 'review', label: '리뷰/비교', icon: '⚖️' },
-  { id: 'vlog', label: '브이로그', icon: '🎥' },
-  { id: 'debate', label: '찬반 토론', icon: '💬' },
+const CONTENT_FORMATS = [
+  { id: 'shorts' as const, label: '숏폼', desc: '1-3분, 빠른 템포' },
+  { id: 'long' as const, label: '롱폼', desc: '10-20분, 의미 단위 호흡' },
+  { id: 'nano' as const, label: '나노', desc: '15-60초, 도파민 플래시' },
 ];
 
 export default function ScriptWriterTab() {
   const apiKeys = useAppStore((s) => s.apiKeys);
   const store = useScriptStore();
 
+  // Step 1: 소재
+  const [inputMode, setInputMode] = useState<'ai' | 'manual'>('manual');
+  const [scriptTitle, setScriptTitle] = useState('');
+  const [scriptSynopsis, setScriptSynopsis] = useState('');
+
+  // Step 3: 대본 생성
+  const [contentFormat, setContentFormat] = useState<'shorts' | 'long' | 'nano'>('long');
+  const [targetCharCount, setTargetCharCount] = useState(1500);
+  const [referenceComments, setReferenceComments] = useState('');
+
   const handleGenerate = async () => {
-    if (!store.topic.trim()) {
-      toast.error('주제를 입력해주세요');
+    if (!scriptTitle.trim() && !scriptSynopsis.trim()) {
+      toast.error('제목이나 줄거리를 입력해주세요');
       return;
     }
     store.setGenerating(true);
     store.setResult(null);
-    store.setStreamText('');
+
+    const formatMap: Record<string, ScriptFormat> = { shorts: 'short-form', long: 'long-form', nano: 'nano-form' };
+    const lengthMap: Record<string, number> = { shorts: 2, long: 12, nano: 0.5 };
 
     try {
+      const topic = scriptTitle + (scriptSynopsis ? `\n\n줄거리: ${scriptSynopsis}` : '') +
+        (referenceComments ? `\n\n시청자 댓글 참고:\n${referenceComments}` : '');
+
       const result = await generateScript(
         {
-          topic: store.topic,
+          topic,
           model: store.model,
-          format: store.format,
+          format: formatMap[contentFormat] || 'long-form',
           structure: store.structure,
-          targetLength: store.targetLength,
+          targetLength: lengthMap[contentFormat] || 12,
           tone: store.tone,
           additionalNotes: store.additionalNotes,
           language: '한국어',
@@ -58,305 +65,182 @@ export default function ScriptWriterTab() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-5xl mx-auto"
-      >
-        {/* Header */}
-        <div className="mb-6 flex items-start justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <span>✍️</span> 대본작성
-            </h2>
-            <p className="text-sm text-gray-400 mt-1">AI가 영상 대본을 생성합니다</p>
-          </div>
-          {store.result && (
-            <button
-              onClick={store.resetForm}
-              className="px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors"
-            >
-              새 대본 작성
-            </button>
-          )}
+    <div className="max-w-4xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-white flex items-center gap-2">✍️ 대본작성</h1>
+        <p className="text-sm text-gray-400 mt-1">AI가 영상 대본을 자동 생성합니다</p>
+      </div>
+
+      {/* === STEP 1: 소재 정하기 === */}
+      <section className="mb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="w-8 h-8 rounded-full bg-violet-600 text-white flex items-center justify-center text-sm font-bold">1</span>
+          <h2 className="text-lg font-bold text-white">소재 정하기</h2>
         </div>
 
-        <AnimatePresence mode="wait">
-          {store.result ? (
-            <ScriptResultView key="result" result={store.result} />
-          ) : (
-            <motion.div
-              key="form"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="space-y-6"
-            >
-              {/* Step indicator */}
-              <div className="flex items-center gap-2 mb-4">
-                {[1, 2, 3].map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => store.setStep(s)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      store.step === s
-                        ? 'bg-indigo-600/30 text-indigo-300'
-                        : store.step > s
-                        ? 'text-emerald-400'
-                        : 'text-gray-500'
-                    }`}
-                  >
-                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
-                      store.step === s ? 'bg-indigo-600 text-white' : store.step > s ? 'bg-emerald-600 text-white' : 'bg-gray-700 text-gray-400'
-                    }`}>
-                      {store.step > s ? '✓' : s}
-                    </span>
-                    {s === 1 ? '주제' : s === 2 ? '설정' : '생성'}
-                  </button>
-                ))}
-              </div>
+        {/* Mode toggle */}
+        <div className="flex gap-2 mb-4">
+          <button onClick={() => setInputMode('ai')}
+            className={`px-4 py-2 rounded-lg text-xs font-medium border transition-colors ${inputMode === 'ai' ? 'border-violet-500 bg-violet-600/20 text-violet-400' : 'border-gray-700 text-gray-400 hover:text-white'}`}>
+            AI가 추천해줘
+          </button>
+          <button onClick={() => setInputMode('manual')}
+            className={`px-4 py-2 rounded-lg text-xs font-medium border transition-colors ${inputMode === 'manual' ? 'border-violet-500 bg-violet-600/20 text-violet-400' : 'border-gray-700 text-gray-400 hover:text-white'}`}>
+            직접 입력할게
+          </button>
+        </div>
 
-              {/* Step 1: Topic */}
-              {store.step === 1 && (
-                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">영상 주제</label>
-                    <textarea
-                      value={store.topic}
-                      onChange={(e) => store.setTopic(e.target.value)}
-                      placeholder="예: 2024년 가장 핫한 AI 도구 TOP 10 비교 리뷰"
-                      rows={3}
-                      className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors resize-none"
-                    />
-                  </div>
+        {inputMode === 'ai' ? (
+          <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 text-center">
+            <p className="text-sm text-gray-400 mb-3">채널 분석 데이터를 기반으로 AI가 소재를 추천합니다</p>
+            <button className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm rounded-lg transition-colors">
+              🤖 AI 소재 추천받기
+            </button>
+            <p className="text-[10px] text-gray-600 mt-2">채널/영상 분석 탭에서 벤치마크 데이터를 먼저 수집하면 더 정확합니다</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">📌 제목</label>
+              <input type="text" value={scriptTitle} onChange={(e) => setScriptTitle(e.target.value)}
+                placeholder="영상 제목을 입력하세요"
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">📋 줄거리 · 핵심 내용</label>
+              <textarea value={scriptSynopsis} onChange={(e) => setScriptSynopsis(e.target.value)}
+                placeholder="어떤 내용을 다룰지 간단히 설명해주세요"
+                rows={4} className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 resize-none" />
+            </div>
+          </div>
+        )}
+      </section>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">포맷</label>
-                    <div className="grid grid-cols-3 gap-3">
-                      {FORMATS.map((f) => (
-                        <button
-                          key={f.id}
-                          onClick={() => {
-                            store.setFormat(f.id);
-                            store.setTargetLength(f.id === 'long' ? 10 : f.id === 'short' ? 2 : 0.5);
-                          }}
-                          className={`p-3 rounded-xl border text-left transition-all ${
-                            store.format === f.id
-                              ? 'border-indigo-500 bg-indigo-600/10'
-                              : 'border-gray-800 bg-gray-900 hover:border-gray-700'
-                          }`}
-                        >
-                          <span className="text-xl">{f.icon}</span>
-                          <p className="text-sm font-medium text-white mt-1">{f.label}</p>
-                          <p className="text-[10px] text-gray-500">{f.desc}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+      {/* === STEP 2: 스타일 선택 (간소화) === */}
+      <section className="mb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="w-8 h-8 rounded-full bg-gray-700 text-gray-300 flex items-center justify-center text-sm font-bold">2</span>
+          <h2 className="text-lg font-bold text-white">스타일 선택</h2>
+          <span className="text-xs text-gray-500">(선택사항)</span>
+        </div>
+        <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
+          <p className="text-xs text-gray-400">이미지/영상 탭의 스타일 선택에서 비주얼 스타일을 지정할 수 있습니다.</p>
+          <p className="text-xs text-gray-500 mt-1">채널 분석 데이터가 있으면 자동으로 스타일이 적용됩니다.</p>
+        </div>
+      </section>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">구조</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {STRUCTURES.map((s) => (
-                        <button
-                          key={s.id}
-                          onClick={() => store.setStructure(s.id)}
-                          className={`p-2.5 rounded-lg border text-left transition-all flex items-center gap-2 ${
-                            store.structure === s.id
-                              ? 'border-indigo-500 bg-indigo-600/10'
-                              : 'border-gray-800 bg-gray-900 hover:border-gray-700'
-                          }`}
-                        >
-                          <span>{s.icon}</span>
-                          <span className="text-xs font-medium text-gray-300">{s.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+      {/* === STEP 3: 대본 생성 === */}
+      <section className="mb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="w-8 h-8 rounded-full bg-violet-600 text-white flex items-center justify-center text-sm font-bold">3</span>
+          <h2 className="text-lg font-bold text-white">대본 생성</h2>
+        </div>
 
-                  <div className="flex justify-end">
-                    <button
-                      onClick={() => store.setStep(2)}
-                      disabled={!store.topic.trim()}
-                      className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm rounded-lg transition-colors font-medium"
-                    >
-                      다음 →
-                    </button>
-                  </div>
-                </motion.div>
-              )}
+        <div className="space-y-4">
+          {/* AI Model */}
+          <div>
+            <label className="block text-xs text-gray-400 mb-2">AI 모델</label>
+            <div className="grid grid-cols-3 gap-2">
+              {AI_MODELS.map((m) => (
+                <button key={m.id} onClick={() => store.setModel(m.id)}
+                  className={`p-3 rounded-xl border text-left transition-all ${store.model === m.id ? 'border-violet-500 bg-violet-600/10' : 'border-gray-700 bg-gray-800 hover:border-gray-600'}`}>
+                  <p className="text-xs font-medium text-white">{m.label}</p>
+                  <p className="text-[10px] text-gray-500 mt-0.5">
+                    {m.hasWebSearch ? '웹 검색 지원' : '웹 검색 미지원'}
+                  </p>
+                </button>
+              ))}
+            </div>
+            {!AI_MODELS.find((m) => m.id === store.model)?.hasWebSearch && (
+              <p className="text-[10px] text-amber-500 mt-1">(웹 검색 미지원 — 최신 트렌드 반영이 필요하면 Gemini 추천)</p>
+            )}
+          </div>
 
-              {/* Step 2: Settings */}
-              {store.step === 2 && (
-                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">AI 모델</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {AI_MODELS.map((m) => (
-                        <button
-                          key={m.id}
-                          onClick={() => store.setModel(m.id)}
-                          className={`p-3 rounded-xl border text-left transition-all ${
-                            store.model === m.id
-                              ? 'border-indigo-500 bg-indigo-600/10'
-                              : 'border-gray-800 bg-gray-900 hover:border-gray-700'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-white">{m.label}</p>
-                            <span className="text-[10px] text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">{m.provider}</span>
-                          </div>
-                          <p className="text-[10px] text-gray-500 mt-1">{m.description}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+          {/* Content Format */}
+          <div>
+            <label className="block text-xs text-gray-400 mb-2">콘텐츠 포맷</label>
+            <div className="flex gap-2">
+              {CONTENT_FORMATS.map((f) => (
+                <button key={f.id} onClick={() => {
+                  setContentFormat(f.id);
+                  setTargetCharCount(f.id === 'long' ? 1500 : f.id === 'shorts' ? 500 : 200);
+                }}
+                  className={`flex-1 p-3 rounded-xl border text-center transition-all ${contentFormat === f.id ? 'border-violet-500 bg-violet-600/10' : 'border-gray-700 bg-gray-800 hover:border-gray-600'}`}>
+                  <p className="text-sm font-medium text-white">{f.label}</p>
+                  <p className="text-[10px] text-gray-500">{f.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs text-gray-400 mb-1">목표 길이 (분)</label>
-                      <input
-                        type="number"
-                        value={store.targetLength}
-                        onChange={(e) => store.setTargetLength(Number(e.target.value))}
-                        min={0.25}
-                        max={60}
-                        step={0.5}
-                        className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-gray-400 mb-1">톤 (선택)</label>
-                      <input
-                        type="text"
-                        value={store.tone}
-                        onChange={(e) => store.setTone(e.target.value)}
-                        placeholder="예: 유쾌하고 에너지 넘치는"
-                        className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
-                      />
-                    </div>
-                  </div>
+          {/* Target char count */}
+          <div>
+            <label className="block text-xs text-gray-400 mb-1">목표 글자수: {targetCharCount}자</label>
+            <input type="range" min={contentFormat === 'nano' ? 100 : 350} max={contentFormat === 'long' ? 5000 : 1500}
+              step={contentFormat === 'long' ? 50 : 25} value={targetCharCount}
+              onChange={(e) => setTargetCharCount(Number(e.target.value))}
+              className="w-full accent-violet-500" />
+          </div>
 
-                  <div>
-                    <label className="block text-xs text-gray-400 mb-1">추가 요청사항 (선택)</label>
-                    <textarea
-                      value={store.additionalNotes}
-                      onChange={(e) => store.setAdditionalNotes(e.target.value)}
-                      placeholder="추가로 원하는 내용이 있으면 입력하세요"
-                      rows={2}
-                      className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors resize-none"
-                    />
-                  </div>
+          {/* Reference comments */}
+          <div>
+            <label className="block text-xs text-gray-400 mb-1">참고 댓글 (선택)</label>
+            <textarea value={referenceComments} onChange={(e) => setReferenceComments(e.target.value)}
+              placeholder="YouTube 댓글을 복사·붙여넣기하세요. 시청자 반응과 관심사가 대본에 반영됩니다."
+              rows={3} className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-xs text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 resize-none" />
+          </div>
 
-                  <div className="flex justify-between">
-                    <button onClick={() => store.setStep(1)} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
-                      ← 이전
-                    </button>
-                    <button
-                      onClick={() => store.setStep(3)}
-                      className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded-lg transition-colors font-medium"
-                    >
-                      다음 →
-                    </button>
-                  </div>
-                </motion.div>
-              )}
+          {/* Generate */}
+          <button onClick={handleGenerate} disabled={store.generating || (!scriptTitle.trim() && !scriptSynopsis.trim())}
+            className="w-full py-3 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 disabled:opacity-50 text-white text-sm rounded-lg font-bold transition-all shadow-lg shadow-violet-500/10">
+            {store.generating ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                AI 대본 생성 중...
+              </span>
+            ) : (
+              `AI 대본 생성 (${AI_MODELS.find((m) => m.id === store.model)?.label})`
+            )}
+          </button>
+        </div>
+      </section>
 
-              {/* Step 3: Generate */}
-              {store.step === 3 && (
-                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-                  {/* Summary */}
-                  <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 space-y-2">
-                    <h4 className="text-sm font-medium text-white">생성 요약</h4>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div><span className="text-gray-500">주제:</span> <span className="text-gray-300">{store.topic}</span></div>
-                      <div><span className="text-gray-500">모델:</span> <span className="text-gray-300">{AI_MODELS.find((m) => m.id === store.model)?.label}</span></div>
-                      <div><span className="text-gray-500">포맷:</span> <span className="text-gray-300">{FORMATS.find((f) => f.id === store.format)?.label}</span></div>
-                      <div><span className="text-gray-500">구조:</span> <span className="text-gray-300">{STRUCTURES.find((s) => s.id === store.structure)?.label}</span></div>
-                      <div><span className="text-gray-500">길이:</span> <span className="text-gray-300">{store.targetLength}분</span></div>
-                      {store.tone && <div><span className="text-gray-500">톤:</span> <span className="text-gray-300">{store.tone}</span></div>}
-                    </div>
-                  </div>
-
-                  {/* Generating indicator */}
-                  {store.generating && (
-                    <div className="bg-gray-900 border border-indigo-500/30 rounded-xl p-6 text-center">
-                      <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                      <p className="text-sm text-indigo-300 font-medium">대본 생성 중...</p>
-                      <p className="text-xs text-gray-500 mt-1">AI가 대본을 작성하고 있습니다</p>
-                    </div>
-                  )}
-
-                  <div className="flex justify-between">
-                    <button onClick={() => store.setStep(2)} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
-                      ← 이전
-                    </button>
-                    <button
-                      onClick={handleGenerate}
-                      disabled={store.generating}
-                      className="px-8 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 text-white text-sm rounded-lg transition-all font-medium shadow-lg shadow-indigo-500/20"
-                    >
-                      {store.generating ? '생성 중...' : '✨ 대본 생성'}
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+      {/* === Result === */}
+      {store.result && <ScriptResultView result={store.result} />}
     </div>
   );
 }
 
 function ScriptResultView({ result }: { result: ScriptResult }) {
+  const setActiveTab = useAppStore((s) => s.setActiveTab);
+  const [selectedAsScript, setSelectedAsScript] = useState(false);
+
   const handleCopy = () => {
     const text = result.scenes.map((s) =>
-      `[씬 ${s.sceneNumber}] (${s.duration}초) ${s.mood ? `[${s.mood}]` : ''}\n나레이션: ${s.narration}\n화면: ${s.visualDescription}`
+      `[씬 ${s.sceneNumber}] (${s.duration}초) ${s.mood ? `[${s.mood}]` : ''}\n${s.scriptText}\n화면: ${s.visualDescriptionKO}`
     ).join('\n\n');
     navigator.clipboard.writeText(`# ${result.title}\n\n${text}`);
     toast.success('대본을 클립보드에 복사했습니다');
   };
 
-  const handleExportJson = () => {
-    const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `script-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const totalMinutes = Math.floor(result.totalDuration / 60);
-  const totalSeconds = result.totalDuration % 60;
-
   return (
-    <motion.div
-      key="result"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-4"
-    >
-      {/* Result header */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+    <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+      <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 mb-4">
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="text-base font-semibold text-white">{result.title}</h3>
+            <h3 className="text-base font-bold text-white">{result.title}</h3>
             <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
               <span>{result.scenes.length}씬</span>
-              <span>{totalMinutes}분 {totalSeconds}초</span>
+              <span>{Math.floor(result.totalDuration / 60)}분 {result.totalDuration % 60}초</span>
               <span>{AI_MODELS.find((m) => m.id === result.model)?.label}</span>
               <span className="text-emerald-400">${result.cost.totalUsd.toFixed(4)}</span>
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={handleCopy} className="px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors">
-              복사
-            </button>
-            <button onClick={handleExportJson} className="px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors">
-              JSON 내보내기
+            <button onClick={handleCopy} className="px-3 py-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg transition-colors">복사</button>
+            <button onClick={() => { setSelectedAsScript(true); toast.success('최종 대본으로 선택됨'); }}
+              className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${selectedAsScript ? 'bg-green-600/20 text-green-400 border border-green-500/30' : 'bg-violet-600 hover:bg-violet-500 text-white'}`}>
+              {selectedAsScript ? '✓ 최종 대본으로 선택됨' : '✓ 최종 대본으로 선택'}
             </button>
           </div>
         </div>
@@ -365,37 +249,43 @@ function ScriptResultView({ result }: { result: ScriptResult }) {
       {/* Scenes */}
       <div className="space-y-3">
         {result.scenes.map((scene, idx) => (
-          <motion.div
-            key={scene.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.05 }}
-            className="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors"
-          >
+          <motion.div key={scene.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.04 }}
+            className="bg-gray-800 border border-gray-700 rounded-xl p-4 hover:border-gray-600 transition-colors">
             <div className="flex items-center gap-2 mb-2">
-              <span className="w-6 h-6 rounded-full bg-indigo-600/20 text-indigo-300 flex items-center justify-center text-[10px] font-bold">
-                {scene.sceneNumber}
-              </span>
+              <span className="w-6 h-6 rounded-full bg-violet-600/20 text-violet-300 flex items-center justify-center text-[10px] font-bold">{scene.sceneNumber}</span>
               <span className="text-xs text-gray-500">{scene.duration}초</span>
-              {scene.mood && (
-                <span className="px-1.5 py-0.5 bg-purple-500/10 text-purple-400 rounded text-[10px]">
-                  {scene.mood}
-                </span>
-              )}
+              {scene.mood && <span className="px-1.5 py-0.5 bg-purple-500/10 text-purple-400 rounded text-[10px]">{scene.mood}</span>}
             </div>
-            <div className="space-y-2">
-              <div>
-                <p className="text-[10px] text-gray-500 mb-0.5">나레이션</p>
-                <p className="text-sm text-gray-200 leading-relaxed">{scene.narration}</p>
+            <p className="text-sm text-gray-200 leading-relaxed mb-2">{scene.scriptText}</p>
+            {scene.visualPrompt && (
+              <div className="bg-gray-900/50 rounded-lg p-2 mt-2">
+                <p className="text-[10px] text-gray-500 mb-0.5">Visual Prompt</p>
+                <p className="text-xs text-gray-400">{scene.visualPrompt}</p>
               </div>
-              <div>
+            )}
+            {scene.visualDescriptionKO && (
+              <div className="mt-1">
                 <p className="text-[10px] text-gray-500 mb-0.5">화면 설명</p>
-                <p className="text-xs text-gray-400 leading-relaxed">{scene.visualDescription}</p>
+                <p className="text-xs text-gray-400">{scene.visualDescriptionKO}</p>
               </div>
-            </div>
+            )}
           </motion.div>
         ))}
       </div>
-    </motion.div>
+
+      {/* Next step */}
+      {selectedAsScript && (
+        <div className="mt-6 bg-violet-600/10 border border-violet-500/30 rounded-xl p-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-violet-300">대본이 준비되었습니다!</p>
+            <p className="text-xs text-gray-400 mt-0.5">다음 단계로 이동하여 사운드를 생성하세요</p>
+          </div>
+          <button onClick={() => setActiveTab('sound-studio')}
+            className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm rounded-lg transition-colors">
+            사운드스튜디오로 이동 →
+          </button>
+        </div>
+      )}
+    </motion.section>
   );
 }
