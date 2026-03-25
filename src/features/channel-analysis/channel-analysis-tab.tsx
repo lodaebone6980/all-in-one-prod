@@ -1,8 +1,6 @@
 import { Suspense, lazy, useState } from 'react';
-import { motion } from 'framer-motion';
 import { useAppStore } from '../../stores/use-app-store';
 
-// Sub-tab definitions matching original exactly
 const SUB_TABS = [
   { id: 'keyword-lab', label: '키워드 랩', icon: '🔍' },
   { id: 'channel-room', label: '채널 분석실', icon: '📊' },
@@ -13,94 +11,76 @@ const SUB_TABS = [
 
 type SubTabId = typeof SUB_TABS[number]['id'];
 
-// Lazy-loaded sub-components
 const KeywordLab = lazy(() => import('./components/keyword-lab'));
 const ChannelRoom = lazy(() => import('./components/channel-room'));
 const VideoRoom = lazy(() => import('./components/video-room'));
 const SocialRoom = lazy(() => import('./components/social-room'));
 const ViewAlertPanel = lazy(() => import('./components/view-alert-panel'));
 
-// YouTube API quota tracking
 const QUOTA_LIMIT = 10000;
-const QUOTA_COSTS = [
-  { label: '키워드 검색', cost: 100 },
-  { label: '영상 상세 조회', cost: 1 },
-  { label: '채널 정보 조회', cost: 1 },
-  { label: '댓글 조회', cost: 1 },
-  { label: '자막 조회', cost: 50 },
-];
 
 export default function ChannelAnalysisTab() {
   const [subTab, setSubTab] = useState<SubTabId>('channel-room');
-  const [showQuota, setShowQuota] = useState(false);
-  const apiKeys = useAppStore((s) => s.apiKeys);
+  const [showCompanionBanner, setShowCompanionBanner] = useState(true);
 
   const quotaUsed = Number(localStorage.getItem('YOUTUBE_QUOTA_USED') || '0');
-  const remaining = QUOTA_LIMIT - quotaUsed;
-  const quotaPercent = (quotaUsed / QUOTA_LIMIT) * 100;
 
   return (
-    <div className="max-w-6xl mx-auto p-6 bg-gray-800 rounded-xl shadow-2xl border border-gray-700 relative">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            📡 채널/영상 분석
-          </h1>
-          <p className="text-base text-gray-400 mt-1">
-            키워드 리서치와 채널 벤치마킹으로 콘텐츠 전략을 수립하세요.
-          </p>
+    <div className="w-full">
+      {/* Companion App Banner */}
+      {showCompanionBanner && (
+        <div className="mb-6 bg-gradient-to-r from-indigo-900/80 to-violet-900/60 border border-indigo-500/30 rounded-xl p-5 relative">
+          <button onClick={() => setShowCompanionBanner(false)} className="absolute top-3 right-3 text-gray-400 hover:text-white text-lg">✕</button>
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl flex items-center justify-center text-2xl shadow-lg shrink-0">🚀</div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded">NEW</span>
+                <h3 className="text-base font-bold text-white">All In One Helper 출시</h3>
+              </div>
+              <p className="text-sm text-gray-300">
+                다운로드 3~7배 빠름 · 음성 인식/합성 무료 · 배경 제거 무제한 · 영상 렌더링 초고속
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">헬퍼 앱 하나만 설치하면 모든 기능이 자동으로 활성화됩니다.</p>
+              <div className="flex items-center gap-3 mt-3">
+                <button className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-bold rounded-lg transition-colors">
+                  🍎 macOS 다운로드
+                </button>
+                <span className="text-xs text-gray-500">🪟 Windows 버전 곧 공개 예정</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab Header with API Usage */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-xl">📡</div>
+          <div>
+            <h1 className="text-xl font-bold text-white">채널/영상 분석</h1>
+            <p className="text-sm text-gray-400">키워드 리서치와 채널 벤치마킹으로 콘텐츠 전략을 수립하세요.</p>
+          </div>
         </div>
 
-        {/* API Quota dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setShowQuota(!showQuota)}
-            className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg text-xs text-gray-300 transition-colors"
-          >
-            API 사용량
-          </button>
-          {showQuota && (
-            <div className="absolute right-0 top-full mt-2 w-72 bg-gray-900 border border-gray-700 rounded-xl p-4 shadow-2xl z-50">
-              <h4 className="text-xs font-medium text-white mb-2">YouTube Data API v3 쿼터</h4>
-              <div className="flex justify-between text-xs text-gray-400 mb-1">
-                <span>오늘 사용량: {quotaUsed}</span>
-                <span>/ {QUOTA_LIMIT} units</span>
-              </div>
-              <div className="h-2 bg-gray-800 rounded-full mb-2 overflow-hidden">
-                <div className={`h-full rounded-full ${quotaPercent >= 90 ? 'bg-amber-500' : 'bg-blue-500'}`}
-                  style={{ width: `${Math.min(100, quotaPercent)}%` }} />
-              </div>
-              <p className="text-xs text-gray-500 mb-3">잔여: {remaining} units</p>
-              {quotaPercent >= 90 && (
-                <p className="text-xs text-amber-400 mb-2">⚠ 쿼터 한도 임박</p>
-              )}
-              <div className="border-t border-gray-800 pt-2 space-y-1">
-                {QUOTA_COSTS.map((c) => (
-                  <div key={c.label} className="flex justify-between text-[10px] text-gray-500">
-                    <span>{c.label}</span><span>{c.cost} units</span>
-                  </div>
-                ))}
-              </div>
-              <p className="text-[10px] text-gray-600 mt-2">매일 자정(UTC) 자동 리셋</p>
-            </div>
-          )}
+        {/* API Usage inline */}
+        <div className="flex items-center gap-2 text-sm text-gray-400">
+          <span>API 사용량</span>
+          <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
+            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, (quotaUsed / QUOTA_LIMIT) * 100)}%` }} />
+          </div>
+          <span className="text-xs">{quotaUsed} / {QUOTA_LIMIT.toLocaleString()} ∨</span>
         </div>
       </div>
 
-      {/* Sub-tabs */}
-      <div className="flex items-center gap-1 mb-8 border-b border-gray-700">
+      {/* Sub-tabs - border-bottom style */}
+      <div className="flex border-b border-gray-700 mb-6">
         {SUB_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setSubTab(tab.id)}
-            className={`relative px-4 py-3 text-sm font-bold transition-colors border-b-2 ${
-              subTab === tab.id ? 'text-blue-400 border-blue-500' : 'text-gray-400 hover:text-gray-200 border-transparent'
-            }`}
-          >
-            <span className="flex items-center gap-1.5">
-              <span>{tab.icon}</span>{tab.label}
-            </span>
+          <button key={tab.id} onClick={() => setSubTab(tab.id)}
+            className={`flex items-center gap-1.5 px-5 py-3 text-sm font-bold border-b-2 transition-colors ${
+              subTab === tab.id ? 'text-blue-400 border-blue-500' : 'text-gray-500 hover:text-gray-300 border-transparent'
+            }`}>
+            <span>{tab.icon}</span>{tab.label}
           </button>
         ))}
       </div>
@@ -108,7 +88,7 @@ export default function ChannelAnalysisTab() {
       {/* Content */}
       <Suspense fallback={
         <div className="flex justify-center py-20">
-          <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-gray-600 border-t-blue-400 rounded-full animate-spin" />
         </div>
       }>
         {subTab === 'keyword-lab' && <KeywordLab />}
