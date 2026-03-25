@@ -1,5 +1,14 @@
 import { create } from 'zustand';
-import type { ImageEngine, VideoEngine, AspectRatio, VisualStyle, GeneratedImage, GeneratedVideo } from '../services/image-api';
+import type { ImageModel, VideoEngine, AspectRatio, VisualStyle } from '../services/image-api';
+
+interface GeneratedImage {
+  id: string; url: string; prompt: string; engine: string; style?: string;
+  aspectRatio: AspectRatio; createdAt: number; cost: number;
+}
+interface GeneratedVideo {
+  id: string; url: string; prompt: string; engine: string; style?: string;
+  aspectRatio: AspectRatio; duration: number; createdAt: number; cost: number;
+}
 
 type SubTab = 'image' | 'video' | 'batch' | 'gallery';
 
@@ -10,8 +19,8 @@ interface ImageState {
   // Image generation
   imagePrompt: string;
   setImagePrompt: (p: string) => void;
-  imageEngine: ImageEngine;
-  setImageEngine: (e: ImageEngine) => void;
+  imageEngine: ImageModel;
+  setImageModel: (e: ImageModel) => void;
   imageStyle: VisualStyle | null;
   setImageStyle: (s: VisualStyle | null) => void;
   imageAspect: AspectRatio;
@@ -57,8 +66,8 @@ export const useImageStore = create<ImageState>((set) => ({
 
   imagePrompt: '',
   setImagePrompt: (p) => set({ imagePrompt: p }),
-  imageEngine: 'nanobanana',
-  setImageEngine: (e) => set({ imageEngine: e }),
+  imageEngine: 'model_pro_cost',
+  setImageModel: (e) => set({ imageEngine: e }),
   imageStyle: null,
   setImageStyle: (s) => set({ imageStyle: s }),
   imageAspect: '16:9',

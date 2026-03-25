@@ -4,8 +4,8 @@ import { toast } from 'sonner';
 import { useAppStore } from '../../stores/use-app-store';
 import { useImageStore } from '../../stores/use-image-store';
 import {
-  IMAGE_ENGINES, VIDEO_ENGINES, STYLE_CATEGORIES, getAllStyles,
-  generateImage, PAN_ZOOM_PRESETS,
+  IMAGE_MODELS, VIDEO_ENGINES, STYLE_CATEGORIES, getAllStyles,
+  generateImageNanoBanana, PAN_ZOOM_PRESETS, ASPECT_RATIOS as AR_LIST,
   type AspectRatio, type VisualStyle,
 } from '../../services/image-api';
 
@@ -218,7 +218,7 @@ export default function ImageVideoTab() {
               <div>
                 <label className="block text-xs text-gray-400 mb-1.5">이미지 엔진</label>
                 <div className="space-y-1.5">
-                  {IMAGE_ENGINES.map((engine) => (
+                  {IMAGE_MODELS.map((engine) => (
                     <button
                       key={engine.id}
                       onClick={() => store.setImageEngine(engine.id)}
@@ -231,7 +231,7 @@ export default function ImageVideoTab() {
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-white">{engine.label}</span>
                         <span className="text-[10px] text-emerald-400">
-                          {engine.costPerImage === 0 ? '무료' : `$${engine.costPerImage}`}
+                          {engine.cost === 0 ? '무료' : `$${engine.cost}`}
                         </span>
                       </div>
                       <p className="text-[10px] text-gray-500 mt-0.5">{engine.description}</p>
@@ -276,8 +276,8 @@ export default function ImageVideoTab() {
               <div className="bg-gray-900 border border-gray-800 rounded-lg p-3">
                 <p className="text-[10px] text-gray-500">예상 비용</p>
                 <p className="text-base font-bold text-white">
-                  ${(IMAGE_ENGINES.find((e) => e.id === store.imageEngine)?.costPerImage || 0) * store.imageCount > 0
-                    ? ((IMAGE_ENGINES.find((e) => e.id === store.imageEngine)?.costPerImage || 0) * store.imageCount).toFixed(3)
+                  ${(IMAGE_MODELS.find((e) => e.id === store.imageEngine)?.cost || 0) * store.imageCount > 0
+                    ? ((IMAGE_MODELS.find((e) => e.id === store.imageEngine)?.cost || 0) * store.imageCount).toFixed(3)
                     : '무료'}
                 </p>
               </div>
@@ -361,7 +361,7 @@ export default function ImageVideoTab() {
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-white">{engine.label}</span>
-                        <span className="text-[10px] text-emerald-400">${engine.costPerVideo}</span>
+                        <span className="text-[10px] text-emerald-400">${engine.cost}</span>
                       </div>
                       <p className="text-[10px] text-gray-500 mt-0.5">{engine.description} | ~{engine.maxDuration}s | {engine.maxResolution}</p>
                     </button>
