@@ -29,7 +29,7 @@ export default function CompanionBannerTab() {
     }, 1500);
   };
 
-  const selectedTemplate = BANNER_TEMPLATES.find((t) => t.id === template)!;
+  const selectedTemplate = BANNER_TEMPLATES.find((t) => t.id === template) ?? BANNER_TEMPLATES[0];
 
   return (
     <div className="flex-1 overflow-y-auto p-6">

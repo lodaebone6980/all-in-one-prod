@@ -23,7 +23,8 @@ export default function ChannelAnalysisTab() {
   const [subTab, setSubTab] = useState<SubTabId>('channel-room');
   const [showCompanionBanner, setShowCompanionBanner] = useState(true);
 
-  const quotaUsed = Number(localStorage.getItem('YOUTUBE_QUOTA_USED') || '0');
+  let quotaUsed = 0;
+  try { quotaUsed = Number(localStorage.getItem('YOUTUBE_QUOTA_USED') || '0'); } catch {}
 
   return (
     <div className="w-full">
